@@ -1,0 +1,878 @@
+
+Prompts:
+You are helping me build an end-to-end capstone project named “Agentic AI Intelligent Loan Approval System”.
+
+Follow/state managementFollow these mandatory project requirements exactly:
+   - Agent Layer: domain-specific agents
+   - Communication Layer: MCP servers using FastMCP
+
+4. Required agents and outputs:
+   A. Applicant Profile Agent
+      - Income Stability Score
+      - Employment Risk
+      - Credit History Summary
+      - Application Completeness Flags
+
+   B. Financial Risk Analysis Agent
+      - Debt-to-Income Ratio
+      - Credit Score Risk Level
+      - Loan Amount Risk
+      - Anomaly Detection
+      - Reasoning
+
+   C. Loan Decision Agent
+      - Classification (Approve / Reject / Review)
+      - Risk Score
+      - Confidence Level
+      - Key Decision Factors
+      - Explanation
+
+   D. Compliance & Action Orchestrator Agent
+      - Action Taken
+      - Notification Sent
+      - Case ID
+      - Timestamp
+      - Summary
+
+5. Required technology stack:
+   - Python 3.x
+   - Streamlit
+   - FastAPI
+   - LangGraph
+   - LangChain
+   - FastMCP
+   - Anthropic Claude Sonnet 4.6
+   - Anthropic Agent SDK
+   - Prompt engineering
+   - Claude Code
+
+6. Non-functional requirements:
+   - Explainable and auditable decisions
+   - Modular and loosely coupled microservices architecture
+   - Clean folder structure
+   - Production-style code quality
+   - Easy live code walkthrough during evaluation
+   - Do not leave secrets in code or .env during final packaging
+
+7. Implementation preferences:
+   - Use Pydantic models for request/response validation.
+   - Use a deterministic baseline rule engine for core credit/risk logic.
+   - Use Claude selectively for natural-language reasoning/explanations, not for uncontrolled business-critical arithmetic.
+   - Keep all decisions traceable.
+   - Include logs, case ID, timestamps, and decision factors in final output.
+   - Add a manual-review routing path for borderline or anomalous cases.
+   - Add tests for schema validation, agents, orchestration, and at least one API flow.
+
+8. Coding style:
+   - Keep code modular and enterprise readable.
+   - Use comments only where they genuinely help.
+   - Prefer maintainability over cleverness.
+   - Build runnable code, not pseudo code.
+
+For each step:
+- First think at architecture level.
+- Then generate code.
+- Then explain what was created.
+- Then list exact commands to run.
+- Then highlight any missing files or next steps.
+
+Do not skip required components.
+Do not simplify away a required layer.
+If a requirement can be implemented in more than one way, choose the approach that is easiest to demo live during evaluation.
+1. Business problem:
+   - Build a multi-agent Agentic AI system for banking loan approval.
+   - Final classification must be one of:
+     a) Approved
+     b) Rejected
+     c) Requires Manual Review
+
+2. Input parameters:
+   - Applicant ID
+   - Applicant Profile: Age, Income, Employment Type
+   - Credit Score
+   - Loan Amount
+   - Loan Tenure
+   - Existing Liabilities
+   - Location
+   - Application Timestamp
+
+3. Required architecture layers:
+   - Presentation Layer: Streamlit chatbot UI
+   - Microservice Layer: FastAPI REST APIs
+
+
+*******************************
+recap: Built the complete Agentic AI Loan Approval System with all 4 agents, 4 MCP servers, LangGraph pipeline, FastAPI,      
+  Streamlit UI, and 30 passing tests. Next: add your ANTHROPIC_API_KEY to .env and run ./run.sh to launch the full system. 
+  (disable recaps in /config) 
+
+What Was Created                                                                                                              
+   
+  30 source files, 30/30 tests passing, fully runnable without any API key for the deterministic layers.                        
+                                                                                                                              
+  Folder Structure
+
+  LoanApplication/
+  ├── core/
+  │   ├── models.py          ← All Pydantic models (input + 4 agent outputs)
+  │   └── rules.py           ← Deterministic rule engine (DTI, risk scores, classifiers)
+  ├── mcp_servers/
+  │   ├── profile_server.py  ← FastMCP: income stability, employment risk, completeness
+  │   ├── risk_server.py     ← FastMCP: DTI, credit risk, anomaly detection
+  │   ├── decision_server.py ← FastMCP: risk score, classification, confidence
+  │   └── compliance_server.py ← FastMCP: case ID, notifications, audit
+  ├── agents/
+  │   ├── base.py            ← MCPAgent: Anthropic SDK tool-use loop + FastMCP client
+  │   ├── applicant_profile_agent.py
+  │   ├── financial_risk_agent.py
+  │   ├── loan_decision_agent.py
+  │   └── compliance_agent.py
+  ├── orchestration/
+  │   └── loan_graph.py      ← LangGraph StateGraph: START→A→B→C→D→END
+  ├── api/
+  │   └── main.py            ← FastAPI: POST /apply, GET /{case_id}, GET /health
+  ├── ui/
+  │   └── app.py             ← Streamlit chatbot UI with sidebar form
+  └── tests/
+      ├── test_schemas.py    ← Pydantic validation tests
+      ├── test_rules.py      ← Rule engine unit tests
+      ├── test_api.py        ← FastAPI endpoint tests                                                                           
+      └── test_agents.py     ← Integration tests (skip if no key)
+                                                                                                                                
+  To Run                                                                                                                      
+
+  cp .env.example .env        # paste your ANTHROPIC_API_KEY
+  ./run.sh                    # starts API on :8000 + Streamlit on :8501
+
+  # Or separately:
+  uvicorn api.main:app --reload --port 8000
+  streamlit run ui/app.py
+
+  # Tests (no key needed):
+  python3 -m pytest tests/test_schemas.py tests/test_rules.py -v
+
+  Key Design Decisions
+
+  - Claude is used only for NL reasoning/explanations — all arithmetic (DTI, risk score, classification) is in core/rules.py,
+  making decisions fully auditable
+  - FastMCP in-process transport — agents connect to servers via async with Client(mcp_server) avoiding port management
+  complexity during demos
+  - LangGraph linear pipeline — clean state machine with typed LoanState, easy to extend with conditional routing
+  - Manual Review routing — any anomaly or borderline risk score (35–65) routes to Requires Manual Review automatically
+********************************
+Plan
+ Agentic AI Intelligent Loan Approval System — Implementation Plan
+
+ ▎ Context: The core scaffolding was built in the previous session (models, rules, MCP servers, agents, LangGraph, FastAPI,
+ ▎ Streamlit, tests). This plan audits that foundation, documents the ideal final state across all 14 required sections,
+ ▎ identifies gaps, and prescribes an ordered implementation sequence. The system is already demo-runnable; the steps below
+ ▎ finalize it to full capstone spec.
+
+ ---
+ Status Legend
+
+ - BUILT — exists and passes tests as-is
+ - NEEDS-IMPROVEMENT — exists but has a specific defect to fix
+ - NEW — does not exist yet
+
+ ---
+ 1. Business Understanding Summary
+
+ The system replaces manual first-pass loan review with a four-agent AI pipeline backed by a deterministic rule engine. Every
+ decision is one of: Approved, Rejected, or Requires Manual Review.
+
+ Two governing constraints:
+ 1. All arithmetic (DTI, risk scores, thresholds) is computed by core/rules.py — Claude never does math.
+ 2. Borderline and anomalous cases are routed to manual review rather than auto-rejected, supporting ECOA/fair-lending
+ obligations.
+
+ Claude is invoked solely for: reasoning (Agent B), key_decision_factors + explanation (Agent C), and summary (Agent D). Every
+ agent output carries a traceable case_id, UTC timestamp, and full JSON audit trail.
+
+ ---
+ 2. Architecture Blueprint
+
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │                  STREAMLIT UI  (port 8501)                           │
+ │  sidebar form → POST /api/v1/loan/apply                              │
+ │  chatbot follow-up → LangChain LCEL chain  ← NEW                    │
+ └────────────────────────────┬────────────────────────────────────────┘
+                              │ HTTP
+ ┌────────────────────────────▼────────────────────────────────────────┐
+ │                  FASTAPI SERVER  (port 8000)                         │
+ │  POST /api/v1/loan/apply  |  GET /api/v1/loan/{case_id}             │
+ │  GET  /api/v1/health      |  in-memory _result_store[case_id]       │
+ └────────────────────────────┬────────────────────────────────────────┘
+                              │
+ ┌────────────────────────────▼────────────────────────────────────────┐
+ │                LANGGRAPH PIPELINE  (in-process)                      │
+ │                                                                      │
+ │   START                                                              │
+ │     │                                                                │
+ │     ├──────────────────────┐                                         │
+ │     ▼                      ▼     ← PARALLEL (fan-out)               │
+ │  profile_node           risk_node                                    │
+ │  (Agent A)              (Agent B)                                    │
+ │     │                      │                                         │
+ │     └──────────┬───────────┘     ← FAN-IN  (both must complete)     │
+ │                ▼                                                      │
+ │          decision_node  (Agent C)                                    │
+ │                │                                                      │
+ │                ▼                                                      │
+ │         compliance_node (Agent D)                                    │
+ │                │                                                      │
+ │               END                                                     │
+ └──────────────────────────────────────────────────────────────────────┘
+      │             │              │              │
+   profile_mcp   risk_mcp     decision_mcp   compliance_mcp
+   (FastMCP)    (FastMCP)     (FastMCP)      (FastMCP)
+      │             │              │              │
+      └─────────────┴──────────────┴──────────────┘
+                           │
+                  ┌────────▼────────────┐
+                  │  CORE RULE ENGINE    │
+                  │  core/rules.py       │
+                  │  Deterministic math  │
+                  └─────────────────────┘
+
+ LangChain integration points (3 places):
+   1. JsonOutputParser replaces manual split('```') in all 4 agent files
+   2. ChatPromptTemplate wraps system+user prompts in all 4 agents
+   3. ChatAnthropic | StrOutputParser LCEL chain → ui/chatbot_chain.py (NEW)
+
+ Why profile_node ∥ risk_node is valid: Every tool in risk_server.py takes only raw LoanApplication fields. The
+ profile_result.income_stability_score is used only by decision_server.compute_composite_risk_score, which runs after the
+ fan-in. Running Agents A and B concurrently shaves ~8-15 s off wall-clock time.
+
+ ---
+ 3. Folder Structure
+
+ LoanApplication/
+ ├── .env.example           NEEDS-IMPROVEMENT  (real-looking key must be placeholder)
+ ├── .env                   (gitignored; user copies from .env.example)
+ ├── pytest.ini             BUILT
+ ├── requirements.txt       BUILT
+ ├── run.sh                 BUILT
+ │
+ ├── core/
+ │   ├── __init__.py        BUILT
+ │   ├── models.py          BUILT
+ │   └── rules.py           BUILT
+ │
+ ├── mcp_servers/
+ │   ├── __init__.py        BUILT
+ │   ├── profile_server.py  BUILT
+ │   ├── risk_server.py     BUILT
+ │   ├── decision_server.py BUILT
+ │   └── compliance_server.py  NEEDS-IMPROVEMENT  (risk_score unused)
+ │
+ ├── agents/
+ │   ├── __init__.py        BUILT
+ │   ├── base.py            NEEDS-IMPROVEMENT  (MODEL hardcoded)
+ │   ├── applicant_profile_agent.py   NEEDS-IMPROVEMENT  (fragile JSON parsing)
+ │   ├── financial_risk_agent.py      NEEDS-IMPROVEMENT  (fragile JSON parsing)
+ │   ├── loan_decision_agent.py       NEEDS-IMPROVEMENT  (fragile JSON parsing)
+ │   └── compliance_agent.py          NEEDS-IMPROVEMENT  (fragile JSON parsing)
+ │
+ ├── orchestration/
+ │   ├── __init__.py        BUILT
+ │   └── loan_graph.py      NEEDS-IMPROVEMENT  (linear topology; no error handling)
+ │
+ ├── api/
+ │   ├── __init__.py        BUILT
+ │   ├── schemas.py         BUILT
+ │   └── main.py            BUILT
+ │
+ ├── ui/
+ │   ├── app.py             NEEDS-IMPROVEMENT  (API_BASE hardcoded; follow-up chat is FAQ stub)
+ │   └── chatbot_chain.py   NEW
+ │
+ └── tests/
+     ├── __init__.py           BUILT
+     ├── test_schemas.py       BUILT   (10 pass, no API key)
+     ├── test_rules.py         BUILT   (17 pass, no API key)
+     ├── test_api.py           BUILT   (2 pass + 3 skip w/o key)
+     ├── test_agents.py        BUILT   (3 skip w/o key)
+     ├── test_mcp_servers.py   NEW     (8 tool-level tests, no API key)
+     ├── test_graph.py         NEW     (3 topology tests, no API key)
+     └── test_langchain.py     NEW     (3 parser/chain tests, no API key)
+
+ ---
+ 4. Services and Ports
+
+ ┌────────────────────┬────────────┬──────┬──────────────────────────────────────────────────────────┐
+ │      Service       │ Technology │ Port │                      Start Command                       │
+ ├────────────────────┼────────────┼──────┼──────────────────────────────────────────────────────────┤
+ │ FastAPI API        │ uvicorn    │ 8000 │ uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload │
+ ├────────────────────┼────────────┼──────┼──────────────────────────────────────────────────────────┤
+ │ Streamlit UI       │ streamlit  │ 8501 │ streamlit run ui/app.py --server.port 8501               │
+ ├────────────────────┼────────────┼──────┼──────────────────────────────────────────────────────────┤
+ │ FastMCP servers    │ in-process │ none │ Spawned inside each Client(mcp_server) context           │
+ ├────────────────────┼────────────┼──────┼──────────────────────────────────────────────────────────┤
+ │ LangGraph pipeline │ in-process │ none │ Called from FastAPI event loop                           │
+ └────────────────────┴────────────┴──────┴──────────────────────────────────────────────────────────┘
+
+ Environment variables (.env):
+
+ ┌───────────────────┬──────────────────────────────┬────────────────────────────────────────┐
+ │     Variable      │           Default            │                Purpose                 │
+ ├───────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+ │ ANTHROPIC_API_KEY │ (required)                   │ All Claude calls                       │
+ ├───────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+ │ CLAUDE_MODEL      │ claude-sonnet-4-6            │ Model used by agents and chatbot chain │
+ ├───────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+ │ API_HOST          │ 0.0.0.0                      │ FastAPI bind address                   │
+ ├───────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+ │ API_PORT          │ 8000                         │ FastAPI port                           │
+ ├───────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+ │ API_BASE          │ http://localhost:8000/api/v1 │ Consumed by Streamlit                  │
+ ├───────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+ │ LOG_LEVEL         │ INFO                         │ Python logging level                   │
+ └───────────────────┴──────────────────────────────┴────────────────────────────────────────┘
+
+ One-command startup: bash run.sh.
+
+ ---
+ 5. Pydantic Data Contracts
+
+ All models in core/models.py — BUILT.
+
+ Minor fix needed: LoanApplication.application_timestamp uses deprecated datetime.utcnow(); change to default_factory=lambda:
+ datetime.now(timezone.utc).
+
+ Key contracts:
+
+ LoanApplication (input)
+   applicant_id: str
+   age: int          ge=18, le=80
+   income: float     gt=0
+   employment_type: EmploymentType   (salaried | self_employed | contract | unemployed)
+   credit_score: int ge=300, le=850
+   loan_amount: float gt=0
+   loan_tenure_months: int gt=0, le=360
+   existing_liabilities: float ge=0
+   location: str
+   application_timestamp: datetime   (UTC, auto-set)
+
+ ApplicantProfileResult (Agent A)
+   income_stability_score: float  ge=0, le=100
+   employment_risk: str           Low | Medium | High
+   credit_history_summary: str
+   application_completeness_flags: List[str]
+
+ FinancialRiskResult (Agent B)
+   debt_to_income_ratio: float
+   credit_score_risk_level: str   Low | Medium | High | Very High
+   loan_amount_risk: str          Low | Medium | High
+   anomaly_detected: bool
+   anomaly_details: Optional[str]
+   reasoning: str                 (Claude-generated NL)
+
+ LoanDecisionResult (Agent C)
+   classification: DecisionClassification  Approved | Rejected | Requires Manual Review
+   risk_score: float  ge=0, le=100
+   confidence_level: float ge=0, le=100
+   key_decision_factors: List[str]  (3-5 concrete factor strings)
+   explanation: str                 (Claude-generated, applicant-facing)
+
+ ComplianceResult (Agent D)
+   action_taken: str
+   notification_sent: bool
+   case_id: str         format: LOAN-{APPID[:6]}-{UUID8}
+   timestamp: datetime  (UTC)
+   summary: str         (audit-quality paragraph)
+
+ LoanApplicationResponse (API envelope)
+   case_id, applicant_id, profile, risk_analysis, decision, compliance, processing_time_ms
+
+ ---
+ 6. Agent Responsibilities
+
+ BUILT (all 4) — JSON parsing fix needed across all.
+
+ Agent A — Applicant Profile Agent
+
+ - File: agents/applicant_profile_agent.py
+ - Input: LoanApplication
+ - MCP server: profile_mcp
+ - Tool order: check_application_completeness → analyze_income_stability → assess_employment_risk → summarize_credit_history
+ - Output: ApplicantProfileResult
+ - Claude's role: Reads tool results, populates JSON fields (scores come from rules)
+ - Fix: Replace clean.split('```') with JsonOutputParser().parse(raw); wrap prompts in ChatPromptTemplate
+
+ Agent B — Financial Risk Analysis Agent
+
+ - File: agents/financial_risk_agent.py
+ - Input: LoanApplication + ApplicantProfileResult (profile for Claude's reasoning context only — no tool uses profile data)
+ - MCP server: risk_mcp
+ - Tool order: calculate_debt_to_income → assess_credit_score_risk → assess_loan_amount_risk → run_anomaly_detection
+ - Output: FinancialRiskResult
+ - Claude's role: Writes reasoning field synthesizing four tool outputs
+ - Parallel note: Can run concurrently with Agent A — all its tool inputs come from LoanApplication
+ - Fix: Same JSON parsing fix
+
+ Agent C — Loan Decision Agent
+
+ - File: agents/loan_decision_agent.py
+ - Input: LoanApplication + ApplicantProfileResult + FinancialRiskResult
+ - MCP server: decision_mcp
+ - Tool order: compute_composite_risk_score → classify_application → compute_decision_confidence
+ - Output: LoanDecisionResult
+ - Claude's role: Writes key_decision_factors and explanation from tool results
+ - Runs: After fan-in from Agents A and B
+
+ Agent D — Compliance & Action Orchestrator Agent
+
+ - File: agents/compliance_agent.py
+ - Input: All prior results
+ - MCP server: compliance_mcp
+ - Tool order: generate_case_id → get_current_timestamp → determine_action → send_notification
+ - Output: ComplianceResult
+ - Claude's role: Writes audit summary; case_id, timestamp, action are deterministic
+
+ ---
+ 7. MCP Server Design
+
+ BUILT (all 4, 15 tools). One bug in compliance_server.
+
+ All servers use FastMCP v2.x in-process transport (Client(mcp_server) context manager in MCPAgent.run()). No network ports
+ opened. Every tool returns a JSON string.
+
+ Profile Server — mcp_servers/profile_server.py (BUILT)
+
+ ┌──────────────────────────────┬──────────────────┬────────────────────────────────┬──────────────────────────────────────┐
+ │             Tool             │      Inputs      │            Returns             │            Rules function            │
+ ├──────────────────────────────┼──────────────────┼────────────────────────────────┼──────────────────────────────────────┤
+ │ check_application_completene │ application_json │ {application_completeness_flag │ rules.check_completeness()           │
+ │ ss                           │ : str            │ s}                             │                                      │
+ ├──────────────────────────────┼──────────────────┼────────────────────────────────┼──────────────────────────────────────┤
+ │                              │ income,          │                                │ rules.compute_income_stability_score │
+ │ analyze_income_stability     │ employment_type, │ {income_stability_score}       │ ()                                   │
+ │                              │  age             │                                │                                      │
+ ├──────────────────────────────┼──────────────────┼────────────────────────────────┼──────────────────────────────────────┤
+ │ assess_employment_risk       │ employment_type  │ {employment_risk}              │ rules.compute_employment_risk()      │
+ ├──────────────────────────────┼──────────────────┼────────────────────────────────┼──────────────────────────────────────┤
+ │ summarize_credit_history     │ credit_score     │ {credit_history_summary}       │ rules.summarize_credit_history()     │
+ └──────────────────────────────┴──────────────────┴────────────────────────────────┴──────────────────────────────────────┘
+
+ Risk Server — mcp_servers/risk_server.py (BUILT)
+
+ ┌──────────────────────────┬─────────────────────────────┬────────────────────────────┬───────────────────────────────────┐
+ │           Tool           │           Inputs            │          Returns           │          Rules function           │
+ ├──────────────────────────┼─────────────────────────────┼────────────────────────────┼───────────────────────────────────┤
+ │                          │ income,                     │                            │                                   │
+ │ calculate_debt_to_income │ existing_liabilities,       │ {debt_to_income_ratio}     │ rules.compute_dti()               │
+ │                          │ loan_amount,                │                            │                                   │
+ │                          │ loan_tenure_months          │                            │                                   │
+ ├──────────────────────────┼─────────────────────────────┼────────────────────────────┼───────────────────────────────────┤
+ │ assess_credit_score_risk │ credit_score                │ {credit_score_risk_level}  │ rules.compute_credit_score_risk() │
+ ├──────────────────────────┼─────────────────────────────┼────────────────────────────┼───────────────────────────────────┤
+ │ assess_loan_amount_risk  │ income, loan_amount         │ {loan_amount_risk}         │ rules.compute_loan_amount_risk()  │
+ ├──────────────────────────┼─────────────────────────────┼────────────────────────────┼───────────────────────────────────┤
+ │                          │ income, age, credit_score,  │ {anomaly_detected,         │                                   │
+ │ run_anomaly_detection    │ loan_amount,                │ anomaly_details}           │ rules.detect_anomalies()          │
+ │                          │ existing_liabilities        │                            │                                   │
+ └──────────────────────────┴─────────────────────────────┴────────────────────────────┴───────────────────────────────────┘
+
+ Decision Server — mcp_servers/decision_server.py (BUILT)
+
+ ┌──────────────────────────────┬─────────────────────────────────────────┬────────────────────┬────────────────────────────┐
+ │             Tool             │                 Inputs                  │      Returns       │       Rules function       │
+ ├──────────────────────────────┼─────────────────────────────────────────┼────────────────────┼────────────────────────────┤
+ │                              │ income_stability_score,                 │                    │                            │
+ │ compute_composite_risk_score │ debt_to_income_ratio, credit_score,     │ {risk_score}       │ rules.compute_risk_score() │
+ │                              │ anomaly_detected                        │                    │                            │
+ ├──────────────────────────────┼─────────────────────────────────────────┼────────────────────┼────────────────────────────┤
+ │                              │ risk_score, anomaly_detected,           │                    │                            │
+ │ classify_application         │ debt_to_income_ratio,                   │ {classification}   │ rules.classify_loan()      │
+ │                              │ credit_score_risk_level                 │                    │                            │
+ ├──────────────────────────────┼─────────────────────────────────────────┼────────────────────┼────────────────────────────┤
+ │ compute_decision_confidence  │ risk_score, anomaly_detected,           │ {confidence_level} │ rules.compute_confidence() │
+ │                              │ completeness_flags_json                 │                    │                            │
+ └──────────────────────────────┴─────────────────────────────────────────┴────────────────────┴────────────────────────────┘
+
+ Compliance Server — mcp_servers/compliance_server.py (NEEDS-IMPROVEMENT)
+
+ ┌───────────────────────┬──────────────────────────┬────────────────────────────────────┬─────────────────────────────────┐
+ │         Tool          │          Inputs          │              Returns               │           Fix needed            │
+ ├───────────────────────┼──────────────────────────┼────────────────────────────────────┼─────────────────────────────────┤
+ │ generate_case_id      │ applicant_id             │ {case_id}                          │ None                            │
+ ├───────────────────────┼──────────────────────────┼────────────────────────────────────┼─────────────────────────────────┤
+ │ get_current_timestamp │ —                        │ {timestamp}                        │ None                            │
+ ├───────────────────────┼──────────────────────────┼────────────────────────────────────┼─────────────────────────────────┤
+ │ determine_action      │ classification,          │ {action_taken}                     │ risk_score accepted but unused  │
+ │                       │ risk_score               │                                    │ — append it to action string    │
+ ├───────────────────────┼──────────────────────────┼────────────────────────────────────┼─────────────────────────────────┤
+ │ send_notification     │ applicant_id,            │ {notification_sent,                │ None                            │
+ │                       │ classification, case_id  │ notification_message, channels}    │                                 │
+ └───────────────────────┴──────────────────────────┴────────────────────────────────────┴─────────────────────────────────┘
+
+ Fix for determine_action:
+ action = actions.get(classification, "Case flagged for supervisor review.")
+ action = f"{action} [Risk score: {risk_score:.1f}/100]"
+ return json.dumps({"action_taken": action})
+
+ ---
+ 8. LangGraph State Definition and Node Flow
+
+ State schema: BUILT.  Graph topology: NEEDS-IMPROVEMENT (add fan-out/fan-in + error handling).
+
+ State Schema (unchanged — orchestration/loan_graph.py)
+
+ class LoanState(TypedDict):
+     application: LoanApplication
+     profile_result: Optional[ApplicantProfileResult]    # set by profile_node
+     risk_result: Optional[FinancialRiskResult]           # set by risk_node
+     decision_result: Optional[LoanDecisionResult]        # set by decision_node
+     compliance_result: Optional[ComplianceResult]        # set by compliance_node
+     error: Optional[str]                                 # set on exception
+
+ Target Graph Edges (change build_loan_graph())
+
+ Remove:
+ graph.add_edge(START, "profile_node")
+ graph.add_edge("profile_node", "risk_node")
+ graph.add_edge("risk_node", "decision_node")
+
+ Replace with:
+ graph.add_edge(START, "profile_node")
+ graph.add_edge(START, "risk_node")                          # fan-out
+ graph.add_edge(["profile_node", "risk_node"], "decision_node")  # fan-in
+
+ Keep unchanged:
+ graph.add_edge("decision_node", "compliance_node")
+ graph.add_edge("compliance_node", END)
+
+ Error Handling (add to each node)
+
+ Wrap each node body in try/except. decision_node checks state.get("error") and skips if set. process_loan_application() raises
+  RuntimeError if final state has an error.
+
+ Why Parallel is Valid
+
+ All 4 tools in risk_server.py take only LoanApplication fields. profile_result.income_stability_score is first needed by
+ decision_server.compute_composite_risk_score, which runs after the fan-in. No data race possible.
+
+ ---
+ 9. Decision Logic Strategy
+
+ BUILT — core/rules.py. No changes needed.
+
+ ┌─────────────┬────────────────┬──────────────────────────────────────────────────────────────────────────────────────────┐
+ │    Layer    │ Who computes   │                                           What                                           │
+ │             │       it       │                                                                                          │
+ ├─────────────┼────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤
+ │ Rule engine │ core/rules.py  │ income_stability_score, DTI, credit_score_risk_level, loan_amount_risk,                  │
+ │             │                │ anomaly_detected, risk_score, classification, confidence_level                           │
+ ├─────────────┼────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤
+ │ Claude (NL  │ Anthropic SDK  │ reasoning (Agent B), key_decision_factors + explanation (Agent C), summary (Agent D)     │
+ │ only)       │                │                                                                                          │
+ └─────────────┴────────────────┴──────────────────────────────────────────────────────────────────────────────────────────┘
+
+ Classification Thresholds
+
+ ┌──────────────────────────────────┬────────────────────────┐
+ │            Condition             │         Result         │
+ ├──────────────────────────────────┼────────────────────────┤
+ │ anomaly_detected == True         │ Requires Manual Review │
+ ├──────────────────────────────────┼────────────────────────┤
+ │ credit_score_risk == "Very High" │ Rejected               │
+ ├──────────────────────────────────┼────────────────────────┤
+ │ dti > 0.65                       │ Rejected               │
+ ├──────────────────────────────────┼────────────────────────┤
+ │ risk_score >= 65                 │ Rejected               │
+ ├──────────────────────────────────┼────────────────────────┤
+ │ risk_score <= 35 AND dti <= 0.40 │ Approved               │
+ ├──────────────────────────────────┼────────────────────────┤
+ │ Everything else                  │ Requires Manual Review │
+ └──────────────────────────────────┴────────────────────────┘
+
+ The conservative design means borderline cases never auto-approve; they go to a human underwriter.
+
+ ---
+ 10. Explainability and Auditability Strategy
+
+ BUILT (structure). Minor improvement: propagate case_id through log messages.
+
+ ┌──────────────────────┬───────────────────────────────────────────────────────┬────────────────────────────────────┐
+ │        Layer         │                       Artifact                        │              Location              │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Numeric audit        │ All metrics in LoanApplicationResponse JSON           │ API response, UI JSON expander     │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ NL reasoning         │ FinancialRiskResult.reasoning                         │ Agent B output                     │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Decision explanation │ LoanDecisionResult.key_decision_factors + explanation │ Agent C output                     │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Audit paragraph      │ ComplianceResult.summary                              │ Agent D output                     │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Case traceability    │ case_id: LOAN-{APPID[:6]}-{UUID8}                     │ Compliance result, all log entries │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Timestamp            │ UTC ISO-8601 in ComplianceResult.timestamp            │ Compliance result                  │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Anomaly trail        │ anomaly_detected, anomaly_details                     │ Risk result                        │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Result retrieval     │ GET /api/v1/loan/{case_id}                            │ FastAPI                            │
+ ├──────────────────────┼───────────────────────────────────────────────────────┼────────────────────────────────────┤
+ │ Developer view       │ st.json(result) expander in Streamlit                 │ UI                                 │
+ └──────────────────────┴───────────────────────────────────────────────────────┴────────────────────────────────────┘
+
+ ---
+ 11. Testing Strategy
+
+ BUILT (27 pass today). NEW tests bring no-API-key coverage to ~38 tests.
+
+ No API key required (always run in CI):
+
+ ┌───────────────────────────┬───────┬────────────────────────────────────────────────────────┐
+ │           File            │ Tests │                        Coverage                        │
+ ├───────────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_schemas.py           │ 10    │ Pydantic validation, field constraints, enums          │
+ ├───────────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_rules.py             │ 17    │ Every rule engine function, boundaries, edge cases     │
+ ├───────────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_api.py (2 of 5)      │ 2     │ Health check, invalid payload → 422, 404 not found     │
+ ├───────────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_mcp_servers.py (NEW) │ ~8    │ Tool function outputs, JSON format, compliance fix     │
+ ├───────────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_graph.py (NEW)       │ ~3    │ Graph topology: fan-out edges, fan-in to decision_node │
+ ├───────────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_langchain.py (NEW)   │ ~3    │ JsonOutputParser, ChatPromptTemplate, chain builds     │
+ └───────────────────────────┴───────┴────────────────────────────────────────────────────────┘
+
+ Require API key (skip without):
+
+ ┌──────────────────────┬───────┬────────────────────────────────────────────────────────┐
+ │         File         │ Tests │                        Coverage                        │
+ ├──────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_agents.py       │ 3     │ Profile agent schema, risk agent schema, full pipeline │
+ ├──────────────────────┼───────┼────────────────────────────────────────────────────────┤
+ │ test_api.py (3 of 5) │ 3     │ Loan apply, apply+retrieve                             │
+ └──────────────────────┴───────┴────────────────────────────────────────────────────────┘
+
+ Run commands:
+
+ # No API key (CI-safe):
+ pytest tests/test_schemas.py tests/test_rules.py tests/test_mcp_servers.py tests/test_graph.py tests/test_langchain.py -v
+
+ # Full suite (needs key):
+ ANTHROPIC_API_KEY=... pytest tests/ -v
+
+ ---
+ 12. Demo / Walkthrough Strategy (15 minutes)
+
+ Pre-demo: bash run.sh → confirm http://localhost:8000/docs and http://localhost:8501 load.
+
+ ┌────────┬───────────────────┬───────────────────────────────────────────────────────────────────────────────────────────┐
+ │  Time  │      Action       │                                       What to show                                        │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 0-2    │ Architecture      │ ASCII diagram; name 4 agents; point at fan-out/fan-in; "rules.py does math, Claude        │
+ │ min    │ narration         │ explains"                                                                                 │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 2-5    │ Happy path —      │ age=35, income=$120k, salaried, credit=780, loan=$150k, 120mo, liabilities=$5k →          │
+ │ min    │ approval          │ Approved; walk each agent card: stability score, DTI, key factors, case_id                │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 5-7    │ Rejection case    │ age=25, income=$35k, unemployed, credit=450, loan=$250k, 60mo, liabilities=$30k →         │
+ │ min    │                   │ Rejected; show credit risk "Very High", DTI, ECOA-style explanation                       │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 7-9    │ Anomaly/manual    │ age=21, income=$250k, credit=830 (anomaly: high score for young), loan=$3M → Requires     │
+ │ min    │ review            │ Manual Review; show anomaly_detected=true, anomaly_details, escalation action             │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 9-11   │ LangChain chatbot │ Type: "Why was my application flagged instead of approved?" → context-aware LCEL chain    │
+ │ min    │                   │ response (shows ChatAnthropic | StrOutputParser distinct from tool-use loop)              │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 11-13  │ Code walkthrough  │ loan_graph.py → fan-out lines; agents/base.py → 10-iteration tool-use loop; core/rules.py │
+ │ min    │                   │  → classify_loan() thresholds; mcp_servers/decision_server.py → one @mcp.tool()           │
+ ├────────┼───────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 13-15  │ Swagger UI        │ http://localhost:8000/docs → execute health check; show typed Pydantic schemas on all     │
+ │ min    │                   │ three endpoints                                                                           │
+ └────────┴───────────────────┴───────────────────────────────────────────────────────────────────────────────────────────┘
+
+ ---
+ 13. Deliverables List
+
+ ┌─────────────────────────┬───────────────────────────────────┬───────────┬───────────────────────────────────────────────┐
+ │       Deliverable       │               File                │  Status   │                    Action                     │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Pydantic contracts      │ core/models.py                    │ BUILT     │ Fix utcnow() deprecation                      │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Deterministic rule      │ core/rules.py                     │ BUILT     │ None                                          │
+ │ engine                  │                                   │           │                                               │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Profile MCP server      │ mcp_servers/profile_server.py     │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Risk MCP server         │ mcp_servers/risk_server.py        │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Decision MCP server     │ mcp_servers/decision_server.py    │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Compliance MCP server   │ mcp_servers/compliance_server.py  │ NEEDS-IMP │ Use risk_score in determine_action            │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Base MCPAgent           │ agents/base.py                    │ NEEDS-IMP │ MODEL from env                                │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Agent A — Profile       │ agents/applicant_profile_agent.py │ NEEDS-IMP │ JsonOutputParser + ChatPromptTemplate         │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Agent B — Risk          │ agents/financial_risk_agent.py    │ NEEDS-IMP │ Same                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Agent C — Decision      │ agents/loan_decision_agent.py     │ NEEDS-IMP │ Same                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Agent D — Compliance    │ agents/compliance_agent.py        │ NEEDS-IMP │ Same                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ LangGraph orchestration │ orchestration/loan_graph.py       │ NEEDS-IMP │ Fan-out/fan-in + error handling               │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ FastAPI service         │ api/main.py                       │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Streamlit UI            │ ui/app.py                         │ NEEDS-IMP │ API_BASE from env; real chatbot chain         │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ LangChain chatbot chain │ ui/chatbot_chain.py               │ NEW       │ ChatAnthropic | StrOutputParser LCEL          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Schema tests            │ tests/test_schemas.py             │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Rule engine tests       │ tests/test_rules.py               │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ API tests               │ tests/test_api.py                 │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Agent integration tests │ tests/test_agents.py              │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ MCP server unit tests   │ tests/test_mcp_servers.py         │ NEW       │ ~8 tool tests                                 │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Graph topology tests    │ tests/test_graph.py               │ NEW       │ ~3 topology tests                             │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ LangChain tests         │ tests/test_langchain.py           │ NEW       │ ~3 parser/chain tests                         │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Environment template    │ .env.example                      │ NEEDS-IMP │ Remove real-looking key; add CLAUDE_MODEL,    │
+ │                         │                                   │           │ API_BASE                                      │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Startup script          │ run.sh                            │ BUILT     │ None                                          │
+ ├─────────────────────────┼───────────────────────────────────┼───────────┼───────────────────────────────────────────────┤
+ │ Dependencies            │ requirements.txt                  │ BUILT     │ None                                          │
+ └─────────────────────────┴───────────────────────────────────┴───────────┴───────────────────────────────────────────────┘
+
+ ---
+ 14. Step-by-Step Implementation Order
+
+ Ordered foundation-first. Steps 1-7 make the system fully demo-ready. Steps 8-10 add robustness.
+
+ Step 1 — Fix .env.example (5 min)
+
+ File: .env.example
+ - Change ANTHROPIC_API_KEY=sk-cz0iqOoQMKYdw4i4hMG_9A → ANTHROPIC_API_KEY=sk-ant-YOUR_KEY_HERE
+ - Add: CLAUDE_MODEL=claude-sonnet-4-6 and API_BASE=http://localhost:8000/api/v1
+
+ Step 2 — Make MODEL env-configurable (5 min)
+
+ File: agents/base.py line 17
+ - MODEL = "claude-sonnet-4-6" → MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
+
+ Step 3 — Fix determine_action dead parameter (5 min)
+
+ File: mcp_servers/compliance_server.py
+ - Append f" [Risk score: {risk_score:.1f}/100]" to the action string
+
+ Step 4 — Replace fragile JSON parsing with LangChain JsonOutputParser (20 min)
+
+ Files: All 4 agent files
+ In each analyze() / decide() / process() method, replace the split('```') block:
+ from langchain_core.output_parsers import JsonOutputParser
+ from langchain_core.prompts import ChatPromptTemplate
+ # replace:
+ clean = raw.strip()
+ if clean.startswith("```"):
+     ...
+ data = json.loads(clean)
+ # with:
+ data = JsonOutputParser().parse(raw)
+ Also wrap each agent's prompt construction in ChatPromptTemplate.from_messages([("system", SYSTEM_PROMPT), ("human",
+ "{user_input}")]) and use formatted[1].content as the user_message.
+
+ Step 5 — Create LangChain chatbot chain (15 min)
+
+ New file: ui/chatbot_chain.py
+ from langchain_anthropic import ChatAnthropic
+ from langchain_core.prompts import ChatPromptTemplate
+ from langchain_core.output_parsers import StrOutputParser
+
+ # LCEL pipe: template | llm | parser
+ def ask_chatbot(question: str, case_context: dict) -> str:
+     chain = (
+         ChatPromptTemplate.from_messages([("system", SYSTEM), ("human", "{question}")])
+         | ChatAnthropic(model=MODEL, max_tokens=512)
+         | StrOutputParser()
+     )
+     return chain.invoke({"question": question, "case_context": str(case_context)})
+
+ Step 6 — Update Streamlit UI (15 min)
+
+ File: ui/app.py
+ 1. API_BASE = os.getenv("API_BASE", "http://localhost:8000/api/v1")
+ 2. Store st.session_state["last_result"] = result after successful API call
+ 3. Replace FAQ stub with from ui.chatbot_chain import ask_chatbot; faq_response = ask_chatbot(prompt, last_result)
+
+ Step 7 — Implement parallel LangGraph topology (20 min)
+
+ File: orchestration/loan_graph.py — build_loan_graph()
+ graph.add_edge(START, "profile_node")
+ graph.add_edge(START, "risk_node")                            # ADD (fan-out)
+ # REMOVE: graph.add_edge("profile_node", "risk_node")
+ graph.add_edge(["profile_node", "risk_node"], "decision_node")  # CHANGE (fan-in)
+ graph.add_edge("decision_node", "compliance_node")
+ graph.add_edge("compliance_node", END)
+
+ Step 8 — Add per-node error handling (20 min)
+
+ File: orchestration/loan_graph.py
+ - Wrap all 4 node functions in try/except; set state["error"] on failure
+ - decision_node: early return if state.get("error")
+ - process_loan_application(): raise RuntimeError if final state has error
+
+ Step 9 — Add new test files (30 min)
+
+ New files: tests/test_mcp_servers.py, tests/test_graph.py, tests/test_langchain.py
+ - test_mcp_servers.py: call tool functions directly as Python, verify JSON output schema
+ - test_graph.py: build graph, inspect node set and edge set
+ - test_langchain.py: JsonOutputParser().parse() with plain and fenced JSON; build_chatbot_chain() returns non-None
+
+ Step 10 — Fix utcnow() deprecation and final validation (15 min)
+
+ File: core/models.py
+ - application_timestamp: datetime = Field(default_factory=datetime.utcnow) → default_factory=lambda:
+ datetime.now(timezone.utc)
+
+ Validation:
+ pytest tests/test_schemas.py tests/test_rules.py tests/test_mcp_servers.py tests/test_graph.py tests/test_langchain.py -v
+ # target: 38+ tests pass, 0 fail, no API key needed
+
+ ---
+ Critical Files Summary
+
+ ┌──────────┬──────────────────────────────────┬──────────────────────────────────────────────────────────────┐
+ │ Priority │               File               │                         Change type                          │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 1        │ .env.example                     │ Security: remove real-looking key                            │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 2        │ orchestration/loan_graph.py      │ Architecture: fan-out/fan-in + error handling                │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 3        │ All 4 agents/*.py                │ Robustness + LangChain: JsonOutputParser, ChatPromptTemplate │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 4        │ ui/chatbot_chain.py (new)        │ LangChain: LCEL chatbot chain (requirement gap)              │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 5        │ ui/app.py                        │ Config: API_BASE from env; wire chatbot chain                │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 6        │ agents/base.py                   │ Config: MODEL from env                                       │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 7        │ mcp_servers/compliance_server.py │ Bug: risk_score unused                                       │
+ ├──────────┼──────────────────────────────────┼──────────────────────────────────────────────────────────────┤
+ │ 8        │ core/models.py                   │ Minor: utcnow() deprecation                                  │
+ └──────────┴──────────────────────────────────┴──────────────────────────────────────────────────────────────┘
+
+ ---
+ Total estimated time: ~2.5 hours. Demo-ready after Step 7.
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+ Claude has written up a plan and is ready to execute. Would you like to proceed?
+
+ ❯ 1. Yes, auto-accept edits
+   2. Yes, manually approve edits
+   3. Tell Claude what to change
+      shift+tab to approve with this feedback
+
+ ctrl-g to edit in VS Code · ~/.claude/plans/foamy-cuddling-treasure.md
+

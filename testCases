@@ -1,0 +1,46 @@
+TEST CASES
+✅ Case 1 — APPROVED
+High income, excellent credit, small loan
+
+Field	Value
+Applicant ID	Srujana
+Age	40
+Annual Income	$150,000
+Employment Type	salaried
+Credit Score	800
+Loan Amount	$100,000
+Loan Tenure	120 months (10 yr)
+Existing Liabilities	$5,000
+Location	New York, NY
+Why: DTI = 0.10 (well under 0.40), risk score ≈ 4/100, credit risk = Low, no anomaly → hits risk_score <= 35 AND dti <= 0.40 → Approved
+
+❌ Case 2 — REJECTED
+Very low credit score
+
+Field	Value
+Applicant ID	AARYA
+Age	35
+Annual Income	$50,000
+Employment Type	salaried
+Credit Score	450
+Loan Amount	$100,000
+Loan Tenure	60 months (5 yr)
+Existing Liabilities	$5,000
+Location	Chicago, IL
+Why: Credit score 450 → risk level = "Very High" → immediately hits credit_score_risk == "Very High" → Rejected
+
+⏳ Case 3 — REQUIRES MANUAL REVIEW
+High existing liabilities — triggers anomaly detection
+
+Field	Value
+Applicant ID	Bharathi
+Age	35
+Annual Income	$75,000
+Employment Type	salaried
+Credit Score	700
+Loan Amount	$150,000
+Loan Tenure	60 months (10 yr)
+Existing Liabilities	$10,000
+Location	Newyork, NY
+Why: Existing liabilities ($45,000) = 75% of income ($60,000) → exceeds the 70% anomaly threshold in detect_anomalies() → anomaly_detected = True → Requires Manual Review
+

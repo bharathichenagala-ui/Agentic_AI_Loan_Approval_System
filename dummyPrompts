@@ -1,0 +1,508 @@
+**************
+Prompt 2 — Repository scaffolding prompt
+
+Now generate the project scaffold for the loan approval capstone.
+
+Create:
+1. Recommended folder structure
+2. requirements.txt
+3. .env.example
+4. .gitignore
+5. README.md
+6. start.sh (or run commands section if shell script is not possible)
+7. placeholder files for each module
+
+Use a clean structure similar to this intent:
+- ui/
+- api/
+- orchestrator/
+- agents/
+- mcp_servers/
+- models/
+- services/
+- utils/
+- tests/
+- docs/
+
+Requirements:
+- Include Streamlit, FastAPI, LangGraph, LangChain, langchain-anthropic, FastMCP, anthropic/Agent SDK related packages if needed, uvicorn, python-dotenv, pydantic, httpx, pytest, pytest-asyncio.
+- Add notes in README on architecture, setup, run steps, and evaluation readiness.
+- Ensure .gitignore excludes .env, __pycache__, venv, and generated artifacts.
+
+Return the file tree first, then the full content of each file.
+********************
+Prompt 3 — Domain models and validation prompt
+
+Generate production-style Pydantic models for the loan approval system.
+
+Create models for:
+1. LoanApplication input
+2. ApplicantProfileAgentOutput
+3. FinancialRiskAgentOutput
+4. LoanDecisionAgentOutput
+5. ComplianceAgentOutput
+6. OrchestrationResult
+7. ErrorResponse
+8. HealthResponse
+
+Validation expectations:
+- age: sensible banking range
+- income: > 0
+- credit_score: valid score range
+- loan_amount: > 0
+- tenure_months: > 0
+- liabilities: >= 0
+- applicant_id: non-empty string
+- location: non-empty string
+- application_timestamp: ISO-friendly datetime
+
+Also:
+- Add enums where helpful (employment type, decision status, risk level).
+- Make models audit-friendly.
+- Include example payloads for Swagger/FastAPI docs.
+- Show how these models map to the capstone outputs.
+*******************
+Prompt 4 — Decision and business-rules prompt
+Design a deterministic decision framework for the loan approval capstone.
+
+Goal:
+Use explicit, auditable rules for the core loan decision so that the system is explainable and consistent.
+
+Produce:
+1. Lending rule assumptions
+2. Applicant profile scoring logic
+3. Financial risk logic
+4. Composite risk score logic
+5. Classification thresholds for:
+   - Approved
+   - Rejected
+   - Requires Manual Review
+6. Manual review triggers
+7. Anomaly triggers
+8. Edge-case handling
+9. JSON-friendly output format for each agent
+
+Constraints:
+- Keep the logic realistic for a demo banking scenario.
+- Do not rely on Claude for arithmetic.
+- Claude should explain the decision, not invent the risk score.
+- Make the logic easy to justify in a live evaluation.
+
+Then generate a Python module named something like services/decision_rules.py implementing the rules.
+**************************
+Prompt 5 — Applicant Profile Agent prompt
+
+Generate the Applicant Profile Agent and its MCP server.
+
+Agent responsibilities:
+- Income Stability Score
+- Employment Risk
+- Credit History Summary
+- Application Completeness Flags
+
+Build:
+1. agents/applicant_profile_agent.py
+2. mcp_servers/applicant_db_server.py
+
+Implementation requirements:
+- Use FastMCP to register tools.
+- Expose tools such as:
+  - analyze_income_stability
+  - assess_employment_risk
+  - summarize_credit_history
+  - check_application_completeness
+- Keep agent output structured and deterministic.
+- If Claude is used here, use it only to convert structured findings into concise reasoning text.
+- Include health check support or explain how the service will be verified.
+- Add sample test cases.
+
+Also provide:
+- exact run command
+- example request/response
+- how this agent will be called from LangGraph
+
+********************************
+
+Prompt 6 — Financial Risk Analysis Agent prompt
+Generate the Financial Risk Analysis Agent and its MCP server.
+
+Agent responsibilities:
+- Debt-to-Income Ratio
+- Credit Score Risk Level
+- Loan Amount Risk
+- Anomaly Detection
+- Reasoning
+
+Build:
+1. agents/financial_risk_agent.py
+2. mcp_servers/risk_rules_server.py
+
+Requirements:
+- Use deterministic Python functions for DTI and risk calculations.
+- Register those functions as MCP tools using FastMCP.
+- Include anomaly detection rules such as:
+  - liabilities abnormally high versus income
+  - loan amount suspicious relative to income
+  - risky combinations of credit score and exposure
+- Return structured outputs plus a concise reasoning field.
+- If Claude is used, use it only for readable narrative reasoning based on tool outputs.
+
+Also include:
+- how to test the MCP tools
+- how to unit test the calculations
+- how this agent will be integrated into the orchestration flow
+
+******************************
+Prompt 7 — Loan Decision Agent prompt
+
+Generate the Loan Decision Agent and its MCP server.
+
+Agent responsibilities:
+- Classification (Approve / Reject / Review)
+- Risk Score
+- Confidence Level
+- Key Decision Factors
+- Explanation
+
+Build:
+1. agents/loan_decision_agent.py
+2. mcp_servers/decision_synthesis_server.py
+
+Requirements:
+- Use the outputs from Applicant Profile Agent and Financial Risk Agent as inputs.
+- Compute classification using deterministic rules.
+- Compute a composite risk score explicitly.
+- Generate confidence level deterministically or semi-deterministically based on rule strength.
+- Return ranked key decision factors.
+- Use Claude Sonnet 4.6 to generate a final applicant-friendly and reviewer-friendly explanation.
+- Ensure the structured risk_score remains authoritative even if Claude writes the explanation.
+
+Prompt engineering requirement:
+- Create a high-quality system prompt for Claude that instructs it to:
+  - explain clearly
+  - avoid inventing numbers
+  - cite provided decision factors
+  - keep wording professional and auditable
+  - not contradict the structured output
+
+Also provide:
+- full code
+- a sample Claude prompt template
+- sample output JSON
+- test strategy
+************************************
+Prompt 8 — Compliance & Action Orchestrator Agent prompt
+
+Generate the Compliance & Action Orchestrator Agent and its MCP server.
+
+Agent responsibilities:
+- Action Taken
+- Notification Sent
+- Case ID
+- Timestamp
+- Summary
+
+Build:
+1. agents/compliance_agent.py
+2. mcp_servers/notification_server.py
+
+Requirements:
+- Generate unique case IDs
+- Add ISO timestamps
+- Create different flows for:
+  - Approved
+  - Rejected
+  - Requires Manual Review
+- Produce a compliance summary
+- Include a notification message payload for each outcome
+- Include an audit record containing:
+  - case_id
+  - applicant_id
+  - timestamp
+  - final decision
+  - reason summary
+  - explainability evidence
+  - action taken
+
+Optional but useful:
+- simulate notification sending instead of real email/SMS
+- persist audit outputs locally in JSON for demo purposes
+
+Also:
+- generate tests
+- show example outputs
+- explain why this supports auditability
+
+******************************
+Prompt 9 — LangGraph orchestration prompt
+
+Generate the LangGraph orchestration layer for the loan approval capstone.
+
+Build:
+1. orchestrator/graph.py
+2. orchestrator/state.py
+3. orchestrator/service.py (if needed)
+
+Requirements:
+- Define a typed workflow state
+- Show node-level inputs and outputs
+- Build a StateGraph that coordinates:
+  - applicant profile agent
+  - financial risk agent
+  - loan decision agent
+  - compliance agent
+- Add a manual review routing path
+- Add defensive error handling and fallback paths
+- Maintain a processing log/audit trail in state
+- Prefer parallel execution where it makes architectural sense
+- Clearly explain if applicant and risk nodes can run in parallel and how decision waits for both
+
+Output needed:
+- graph topology explanation
+- full code
+- list of node names
+- state schema
+- run example
+- note on how to demo this in a live walkthrough
+
+*********************
+Prompt 10 — FastAPI gateway prompt
+
+Generate the FastAPI API layer for the loan approval capstone.
+
+Build:
+1. api/main.py
+2. Any router/service files if needed
+
+Endpoints required:
+- POST /api/v1/loan-application
+- GET /api/v1/status/{case_id}
+- GET /health
+- Optional: GET /api/v1/history and GET /api/v1/history/{case_id}
+
+Requirements:
+- Validate input using Pydantic
+- Call the LangGraph orchestrator
+- Return the final structured decision payload
+- Add proper HTTP exceptions and error responses
+- Include request logging
+- Add CORS if helpful for Streamlit
+- Keep code demo-friendly and readable
+
+Also provide:
+- curl examples
+- Swagger-ready examples
+- how to run with uvicorn
+- minimal persistence strategy for history/status lookup
+
+********************
+Prompt 11 — Streamlit UI prompt
+
+Generate the Streamlit frontend for the loan approval capstone.
+
+Build:
+1. ui/app.py
+
+Requirements:
+- Form-based chatbot or assistant-style UI for loan application submission
+- Input fields:
+  - Applicant ID
+  - Age
+  - Income
+  - Employment Type
+  - Credit Score
+  - Loan Amount
+  - Tenure
+  - Existing Liabilities
+  - Location
+  - Application Timestamp
+- Submit to FastAPI backend
+- Display:
+  - decision status
+  - risk score
+  - confidence level
+  - key decision factors
+  - explanation
+  - case ID
+  - timestamp
+  - compliance summary
+  - processing log
+- Add friendly status indicators/colors
+- Add a section for raw JSON response
+- Add basic input validation in UI before API call
+- Make the UI professional and easy to demo live
+
+Also include:
+- exact run command
+- screenshots description of expected UI
+- optional improvements like tabs:
+  - Submit Application
+  - Decision Summary
+  - History
+*************************
+Prompt 12 — LangChain and Claude integration prompt
+
+I must visibly use LangChain as part of this capstone because it is part of the required stack.
+
+Update the project so that LangChain is used meaningfully, not just listed in requirements.
+
+Choose one or both of these approaches:
+1. Use langchain-anthropic ChatAnthropic for explanation generation in the Loan Decision Agent
+2. Use LangChain prompt templates / chat prompt templates for agent prompts
+
+Deliver:
+- exact files to modify
+- code changes
+- reusable prompt templates
+- explanation of why this satisfies the stack requirement
+- keep deterministic rules for all business-critical calculations
+
+**********************
+Prompt 13 — Anthropic Agent SDK / Claude prompt prompt
+
+Enhance the project so Claude Sonnet 4.6 is used appropriately for agentic reasoning and explanation generation.
+
+Requirements:
+- Use Claude only where it adds value:
+  - explanation
+  - summarization
+  - readable reasoning
+  - compliance summary
+- Keep deterministic rules for scoring/classification
+- Create robust prompts for Claude that:
+  - do not allow invented numbers
+  - do not override structured decision outputs
+  - produce concise, auditable business language
+  - mention manual review when applicable
+  - align with banking tone
+
+Generate:
+1. system prompt for decision explanation
+2. system prompt for compliance summary
+3. optional prompt for applicant-facing response
+4. Python integration example using the selected Anthropic/LangChain path
+5. retry/error handling guidance
+
+**********************
+Prompt 14 — Testing prompt
+
+Generate a strong test suite for the loan approval capstone.
+
+I want tests for:
+1. Pydantic validation
+2. Rule engine calculations
+3. Applicant Profile MCP tools
+4. Financial Risk MCP tools
+5. Decision synthesis logic
+6. Compliance outputs
+7. LangGraph orchestration flow
+8. FastAPI endpoint test
+9. At least one end-to-end happy path
+10. At least one manual-review path
+11. At least one rejection path
+
+Requirements:
+- Use pytest and pytest-asyncio where needed
+- Keep tests runnable without real Claude API calls by mocking/stubbing LLM responses when appropriate
+- Make tests clean and easy to explain in evaluation
+
+Return:
+- file tree for tests/
+- full code
+- run command
+- what each test validates
+
+*******************
+Prompt 15 — Packaging and demo-readiness prompt
+
+Prepare this capstone project for evaluation and live walkthrough.
+
+Generate:
+1. a concise but strong README update
+2. a flow.txt or walkthrough.md explaining end-to-end processing
+3. a demo script for a 10–15 minute evaluator walkthrough
+4. a checklist of deliverables
+5. a list of likely evaluator questions and answers
+6. instructions to remove secrets before packaging
+
+Emphasize:
+- business understanding
+- architecture choices
+- why LangGraph was used
+- why MCP/FastMCP was used
+- why Claude is used only for explainability/reasoning
+- how manual review works
+- where auditability is implemented
+
+**********************
+Prompt 16 — Auto-evaluation prompt for self-review
+Evaluate this completed capstone submission as an internal technical reviewer for the case study “Agentic AI Intelligent Loan Approval System”.
+
+Perform evaluation in this exact order:
+
+STEP 1 — Completeness check:
+Verify whether the submission contains:
+- business understanding of the loan approval problem
+- multi-agent / Agentic AI architecture
+- Streamlit UI
+- FastAPI microservice layer
+- LangGraph orchestration
+- MCP-based agent communication
+- Applicant Profile Agent
+- Financial Risk Analysis Agent
+- Loan Decision Agent
+- Compliance & Action Orchestrator Agent
+- end-to-end workflow explanation
+- technology stack used
+- explainability/auditable decision output
+- live walkthrough readiness
+
+If any major part is missing, stop detailed scoring and list the missing elements.
+
+STEP 2 — Detailed review dimensions:
+Review and score:
+1. Business Understanding & Alignment
+2. Agentic AI Architecture & Design
+3. Orchestration & Workflow Quality
+4. Agent Responsibilities & MCP Usage
+5. Technology Stack & Implementation Relevance
+6. Decision Quality, Explainability & Auditability
+7. Code / Implementation Readiness
+
+STEP 3 — Score:
+Use whole numbers only out of 10:
+- 9–10 Excellent
+- 7–8 Good
+- 5–6 Average
+- 0–4 Needs Improvement
+
+STEP 4 — Mandatory summary table:
+Create a table with:
+- Submission Complete (Yes/No)
+- Business Understanding
+- Architecture Quality
+- Agent Design Quality
+- Workflow Clarity
+- Explainability & Auditability
+- Implementation Readiness
+- Score (out of 10)
+- Key Remarks
+
+STEP 5 — Final report:
+Use exactly these headings:
+- GEN-AI Case Study – Executive Summary Report
+- Details of Submission
+- Evaluation Summary Table
+- Final Recommendations for Participant
+
+Constraints:
+- Do not hallucinate missing code or architecture.
+- Be evidence-based.
+- Be precise and constructive.
+- Explicitly mention gaps in explainability, auditability, or manual review flow if missing.
+- Explicitly mention if agent roles are merged or unclear.
+- Explicitly mention if the architecture does not reflect the intended multi-agent design.
+
+Now evaluate the submission folder contents and generate the report.
+
+************
